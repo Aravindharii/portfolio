@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 export default function HeroSection() {
   const containerRef = useRef(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [particles, setParticles] = useState([]); // For holographic particles
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ['start start', 'end start'],
@@ -23,6 +24,19 @@ export default function HeroSection() {
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Generate particles only on client after mount
+  useEffect(() => {
+    const newParticles = [...Array(30)].map((_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      color: i % 2 === 0 ? '#a855f7' : '#ec4899',
+      duration: 3 + Math.random() * 2,
+      delay: Math.random() * 2,
+    }));
+    setParticles(newParticles);
   }, []);
 
   const stats = [
@@ -87,25 +101,25 @@ export default function HeroSection() {
         />
       </div>
 
-      {/* Holographic Particles */}
-      {[...Array(30)].map((_, i) => (
+      {/* Holographic Particles - Fixed for Hydration */}
+      {particles.map((p) => (
         <motion.div
-          key={i}
+          key={p.id}
           className="absolute w-1 h-1 rounded-full"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            background: i % 2 === 0 ? '#a855f7' : '#ec4899',
-            boxShadow: `0 0 10px ${i % 2 === 0 ? '#a855f7' : '#ec4899'}`,
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            background: p.color,
+            boxShadow: `0 0 10px ${p.color}`,
           }}
           animate={{
             y: [0, -100, 0],
             opacity: [0, 1, 0],
           }}
           transition={{
-            duration: 3 + Math.random() * 2,
+            duration: p.duration,
             repeat: Infinity,
-            delay: Math.random() * 2,
+            delay: p.delay,
           }}
         />
       ))}
