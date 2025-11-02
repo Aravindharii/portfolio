@@ -62,7 +62,7 @@ export default function AboutSection() {
                   <span className="text-4xl">💼</span>
                   <div>
                     <h3 className="text-2xl font-bold mb-1">Full Stack Developer</h3>
-                    <p className="text-purple-400 font-medium">Expertzlab Technologies Pvt Ltd</p>
+                    <p className="text-purple-400 font-medium">GoFreeLab Technologies Pvt Ltd</p>
                     <p className="text-sm text-gray-500">August 2024 - Present</p>
                   </div>
                 </div>
@@ -83,23 +83,7 @@ export default function AboutSection() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-pink-500/10 to-orange-500/10 backdrop-blur-sm border border-pink-500/20 rounded-2xl p-8 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative z-10">
-                <div className="flex items-start gap-4 mb-4">
-                  <span className="text-4xl">🎓</span>
-                  <div>
-                    <h3 className="text-2xl font-bold mb-1">MERN Stack Training</h3>
-                    <p className="text-pink-400 font-medium">GoFreeLab Technologies Pvt Ltd</p>
-                    <p className="text-sm text-gray-500">2024 - 2025</p>
-                  </div>
-                </div>
-                <p className="text-gray-300 leading-relaxed">
-                  Comprehensive training in MongoDB, Express.js, React, and Node.js with hands-on project experience 
-                  and modern development practices.
-                </p>
-              </div>
-            </div>
+          
 
             <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-sm border border-blue-500/20 rounded-2xl p-8 relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -119,7 +103,13 @@ export default function AboutSection() {
                     <p className="text-sm text-gray-400">Rajagiri College of Management & Applied Sciences</p>
                     <p className="text-xs text-gray-500">2021 - 2024</p>
                   </div>
+                      <div>
+                    <p className="font-semibold text-white">MERN Stack Training</p>
+                    <p className="text-sm text-gray-400">Expertzlab technologies</p>
+                    <p className="text-xs text-gray-500">2024</p>
+                  </div>
                 </div>
+
               </div>
             </div>
           </motion.div>

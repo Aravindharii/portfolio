@@ -214,28 +214,30 @@ export default function HeroSection() {
 
           {/* Main Heading */}
           <motion.h1
-            className="text-6xl md:text-8xl font-black mb-6 leading-tight relative"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-            style={{
-              transform: `perspective(1000px) rotateX(${mousePosition.y * 0.1}deg) rotateY(${mousePosition.x * 0.1}deg)`,
-              transformStyle: 'preserve-3d',
-            }}
-          >
-            <span className="block text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-              Hi, I'm
-            </span>
-            <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent relative">
-              Aravind V H
-              <span 
-                className="absolute inset-0 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent blur-xl opacity-50"
-                style={{ zIndex: -1 }}
-              >
-                Aravind V H
-              </span>
-            </span>
-          </motion.h1>
+  className="mb-6 leading-tight relative font-black"
+  style={{
+    fontSize: 'clamp(2rem, 8vw, 8rem)',
+    transform: `perspective(1000px) rotateX(${mousePosition.y * 0.1}deg) rotateY(${mousePosition.x * 0.1}deg)`,
+    transformStyle: 'preserve-3d',
+  }}
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.2, duration: 0.8 }}
+>
+  <span className="block text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+    Hi, I'm
+  </span>
+  <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent relative">
+    Aravind V H
+    <span 
+      className="absolute inset-0 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent blur-xl opacity-50"
+      style={{ zIndex: -1 }}
+    >
+      Aravind V H
+    </span>
+  </span>
+</motion.h1>
+
 
           {/* Professional Subtitle */}
           <motion.p
