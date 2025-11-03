@@ -402,18 +402,7 @@ export default function ContactSection() {
             Send Message 📧
           </motion.button>
 
-          <motion.a
-            href="https://calendly.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full sm:w-auto px-8 sm:px-12 py-4 sm:py-5 bg-white/10 border-2 border-white/20 hover:border-purple-500/50 rounded-full font-bold text-lg transition-all text-white"
-            whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.15)' }}
-            whileTap={{ scale: 0.95 }}
-            aria-label="Schedule a quick introduction call"
-            title="Schedule a quick introduction call"
-          >
-            Schedule quick intro 📅
-          </motion.a>
+       
         </motion.div>
       </div>
 

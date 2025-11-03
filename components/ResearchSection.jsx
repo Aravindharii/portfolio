@@ -238,7 +238,7 @@ export default function ResearchSection() {
           className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6"
         >
           {[
-            { value: '3', label: 'Publications', icon: '📚' },
+            { value: '3 Journals', label: 'Accepted', icon: '📚' },
             { value: '100%', label: 'Acceptance Rate', icon: '✨' },
             { value: 'Int\'l', label: 'Recognition', icon: '🌍' },
             { value: '2024', label: 'Published', icon: '📅' },
