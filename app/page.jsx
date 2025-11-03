@@ -8,7 +8,7 @@ import ResearchSection from "../components/ResearchSection";
 export default function Home() {
   return (
     <main>
-      <HeroSection />
+      <HeroSection /> 
       <AboutSection />
       <ResearchSection />
       <ProjectsSection />

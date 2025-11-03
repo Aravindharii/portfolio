@@ -1,33 +1,44 @@
-// components/ContactSection.jsx (ADVANCED - Full Featured)
+// components/ContactSection.jsx (Advanced Hirer-Friendly, A11y, Autosave)
 'use client';
 import { motion, useMotionValue, AnimatePresence } from 'framer-motion';
 import { useInView } from 'framer-motion';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 
 export default function ContactSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
+
   const [hoveredCard, setHoveredCard] = useState(null);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [particles, setParticles] = useState([]);
-  const [formStep, setFormStep] = useState(1); // Multi-step form
+  const [formStep, setFormStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [consent, setConsent] = useState(true);
+
   const [formData, setFormData] = useState({
+    // Step 1: Contact
     name: '',
     email: '',
     phone: '',
+    company: '',
+    role: '',
+    // Step 2: Project
     serviceType: '',
-    budget: '',
     timeline: '',
+    engagement: '',
+    // Step 3: Message
     message: '',
+    // Hidden meta
+    source: 'Portfolio Contact',
   });
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  // Generate particles
+  // Particles
   useEffect(() => {
     const newParticles = Array.from({ length: 8 }).map((_, i) => ({
       id: i,
@@ -46,10 +57,26 @@ export default function ContactSection() {
       mouseX.set(e.clientX - rect.left - rect.width / 2);
       mouseY.set(e.clientY - rect.top - rect.height / 2);
     };
-
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [mouseX, mouseY]);
+
+  // Autosave draft to localStorage (simple implementation)
+  const DRAFT_KEY = 'contactFormDraft_v1';
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem(DRAFT_KEY);
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        setFormData((prev) => ({ ...prev, ...parsed }));
+      }
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+    } catch {}
+  }, [formData]);
 
   const contactMethods = [
     {
@@ -95,15 +122,8 @@ export default function ContactSection() {
     'Mobile App Development',
     'Full Stack Project',
     'Consulting',
+    'UI/UX Implementation',
     'Other',
-  ];
-
-  const budgetRanges = [
-    '$5K - $10K',
-    '$10K - $25K',
-    '$25K - $50K',
-    '$50K+',
-    'To be discussed',
   ];
 
   const timelines = [
@@ -114,6 +134,43 @@ export default function ContactSection() {
     'Flexible',
   ];
 
+  const engagementModels = [
+    'Fixed scope',
+    'Time & materials',
+    'Monthly retainer',
+    'Discovery first',
+    'Not sure yet',
+  ];
+
+  // Basic validators (lightweight and accessible)
+  const validators = {
+    name: (v) => (!v ? 'Name is required' : v.trim().length < 2 ? 'Please enter full name' : ''),
+  // HTML5 email type will also help; this is a safeguard
+    email: (v) => (!v ? 'Email is required' : !/^\S+@\S+\.\S+$/.test(v) ? 'Enter a valid email' : ''),
+    phone: (v) =>
+      v && v.replace(/\D/g, '').length < 7 ? 'Enter a valid phone or leave blank' : '',
+    message: (v) =>
+      !v ? 'Message is required' : v.trim().length < 2 ? 'Add at least 2 characters' : '',
+  };
+
+  const validateStep = (step) => {
+    const newErrors = {};
+    if (step === 1) {
+      const n = validators.name(formData.name);
+      const e = validators.email(formData.email);
+      const p = validators.phone(formData.phone);
+      if (n) newErrors.name = n;
+      if (e) newErrors.email = e;
+      if (p) newErrors.phone = p;
+    }
+    if (step === 3) {
+      const m = validators.message(formData.message);
+      if (m) newErrors.message = m;
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleCopy = (value, index) => {
     navigator.clipboard.writeText(value);
     setCopiedIndex(index);
@@ -122,46 +179,51 @@ export default function ContactSection() {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    if (!validateStep(1) || !validateStep(3)) return;
 
-    // Validation
-    if (!formData.name || !formData.email || !formData.message) {
-      alert('Please fill in all required fields');
+    if (!consent) {
+      setErrors((prev) => ({ ...prev, consent: 'Please allow contact to proceed' }));
       return;
     }
 
     setLoading(true);
     setSubmitStatus(null);
-
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, submittedAt: new Date().toISOString() }),
       });
-
       const data = await response.json();
-
       if (data.success) {
         setSubmitStatus('success');
+        try {
+          localStorage.removeItem(DRAFT_KEY);
+        } catch {}
+        // Keep email visible for success notice
+        const emailCopy = formData.email;
         setFormData({
           name: '',
-          email: '',
+          email: emailCopy,
           phone: '',
+          company: '',
+          role: '',
           serviceType: '',
-          budget: '',
           timeline: '',
+          engagement: '',
           message: '',
+          source: 'Portfolio Contact',
         });
         setFormStep(1);
         setTimeout(() => {
           setShowForm(false);
           setSubmitStatus(null);
+          setFormData((prev) => ({ ...prev, email: '' }));
         }, 3000);
       } else {
         setSubmitStatus('error');
       }
     } catch (error) {
-      console.error('Error:', error);
       setSubmitStatus('error');
     } finally {
       setLoading(false);
@@ -169,63 +231,70 @@ export default function ContactSection() {
   };
 
   const handleNext = () => {
-    if (formStep === 1 && (!formData.name || !formData.email)) {
-      alert('Please fill in name and email');
-      return;
-    }
-    setFormStep(formStep + 1);
+    const ok = validateStep(formStep);
+    if (!ok) return;
+    setFormStep((s) => Math.min(s + 1, 4));
   };
+  const handlePrev = () => setFormStep((s) => Math.max(s - 1, 1));
 
-  const handlePrev = () => {
-    setFormStep(formStep - 1);
+  // Phone mask (very lightweight)
+  const formatPhone = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 15);
+    // Basic grouping, keeps international flexibility
+    return digits.replace(/(\d{3})(\d{3})(\d{0,4})/, (m, a, b, c) =>
+      c ? `+${a} ${b} ${c}` : b ? `+${a} ${b}` : `+${a}`
+    );
   };
 
   const Particle = ({ particle }) => (
     <motion.div
       className="absolute w-1 h-1 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full blur-sm"
-      animate={{
-        y: [0, -100],
-        opacity: [0, 1, 0],
-      }}
-      transition={{
-        duration: particle.duration,
-        repeat: Infinity,
-        delay: particle.delay,
-      }}
-      style={{
-        left: particle.x,
-        top: particle.y,
-      }}
+      animate={{ y: [0, -100], opacity: [0, 1, 0] }}
+      transition={{ duration: particle.duration, repeat: Infinity, delay: particle.delay }}
+      style={{ left: particle.x, top: particle.y }}
     />
   );
 
+  const stepTitles = useMemo(
+    () => ({
+      1: 'Your details',
+      2: 'Project preferences',
+      3: 'Brief & goals',
+      4: 'Review & send',
+    }),
+    []
+  );
+
+  const ProgressBar = () => {
+    const pct = (formStep / 4) * 100;
+    return (
+      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-4" aria-hidden="true">
+        <motion.div
+          className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+        />
+      </div>
+    );
+  };
+
   return (
-    <section
-      id="contact"
-      ref={ref}
-      className="relative py-24 sm:py-32 px-4 sm:px-6 overflow-hidden"
-    >
+    <section id="contact" ref={ref} className="relative py-24 sm:py-32 px-4 sm:px-6 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl"
-          animate={{
-            x: [0, 100, 0],
-            y: [0, -100, 0],
-          }}
+          animate={{ x: [0, 100, 0], y: [0, -100, 0] }}
           transition={{ duration: 20, repeat: Infinity }}
         />
         <motion.div
           className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl"
-          animate={{
-            x: [0, -100, 0],
-            y: [0, 100, 0],
-          }}
+          animate={{ x: [0, -100, 0], y: [0, 100, 0] }}
           transition={{ duration: 25, repeat: Infinity }}
         />
-
-        {particles.map((particle) => (
-          <Particle key={particle.id} particle={particle} />
+        {particles.map((p) => (
+          <Particle key={p.id} particle={p} />
         ))}
       </div>
 
@@ -244,15 +313,13 @@ export default function ContactSection() {
           >
             ✨ Get In Touch
           </motion.span>
-
           <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight">
             <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
-              Let's Connect
+              Let&apos;s Connect
             </span>
           </h2>
-
           <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed">
-            I'm always excited to discuss innovative projects and opportunities. Choose your preferred way to connect.
+            Share a few details about your hiring needs or project and get a prompt response. Aravind will be notified regarding your requirement immediately. {/* Calendly style CTA note guidance */}
           </p>
         </motion.div>
 
@@ -279,7 +346,6 @@ export default function ContactSection() {
                     transition={{ duration: 2, repeat: Infinity }}
                   />
                 )}
-
                 <div className="relative z-10">
                   <motion.div
                     className={`inline-block text-4xl sm:text-5xl mb-4 p-3 sm:p-4 rounded-xl bg-gradient-to-br ${method.color} bg-opacity-20 border border-white/10`}
@@ -287,14 +353,8 @@ export default function ContactSection() {
                   >
                     {method.icon}
                   </motion.div>
-
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
-                    {method.label}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-400 mb-3">
-                    {method.description}
-                  </p>
-
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">{method.label}</h3>
+                  <p className="text-xs sm:text-sm text-gray-400 mb-3">{method.description}</p>
                   <motion.div
                     className="flex items-center justify-between gap-2 mt-4 pt-4 border-t border-white/5"
                     initial={{ opacity: 0 }}
@@ -347,18 +407,17 @@ export default function ContactSection() {
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto px-8 sm:px-12 py-4 sm:py-5 bg-white/10 border-2 border-white/20 hover:border-purple-500/50 rounded-full font-bold text-lg transition-all text-white"
-            whileHover={{
-              scale: 1.05,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-            }}
+            whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.15)' }}
             whileTap={{ scale: 0.95 }}
+            aria-label="Schedule a quick introduction call"
+            title="Schedule a quick introduction call"
           >
-            Schedule Call 📅
+            Schedule quick intro 📅
           </motion.a>
         </motion.div>
       </div>
 
-      {/* ✅ ADVANCED MULTI-STEP FORM MODAL */}
+      {/* Modal */}
       <AnimatePresence>
         {showForm && (
           <>
@@ -369,45 +428,41 @@ export default function ContactSection() {
               onClick={() => setShowForm(false)}
               className="fixed inset-0 bg-black/60 backdrop-blur-md z-40"
             />
-
             <motion.div
               initial={{ opacity: 0, scale: 0.8, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 20 }}
               transition={{ type: 'spring', damping: 30, stiffness: 400 }}
-              className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="contact-modal-title"
+              className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
             >
               <div className="relative bg-gradient-to-br from-slate-900 to-slate-950 backdrop-blur-xl border border-purple-500/20 rounded-3xl p-6 sm:p-8 shadow-2xl">
-                {/* Close Button */}
                 <motion.button
                   onClick={() => setShowForm(false)}
                   className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl z-10"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
+                  aria-label="Close"
                 >
                   ✕
                 </motion.button>
 
-                {/* Form Header */}
-                <div className="mb-6">
-                  <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-                    {submitStatus === 'success'
-                      ? '✓ Message Sent!'
-                      : `Let's Work Together`}
+                <div className="mb-4">
+                  <h3 id="contact-modal-title" className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                    {submitStatus === 'success' ? '✓ Message Sent!' : stepTitles[formStep]}
                   </h3>
                   <p className="text-sm text-gray-400">
                     {submitStatus === 'success'
-                      ? 'Thank you! I will get back to you soon.'
-                      : `Step ${formStep} of 3`}
+                      ? 'Thanks for reaching out. Aravind will be notified regarding your requirement and respond shortly.'
+                      : `Step ${formStep} of 4`}
                   </p>
+                  <ProgressBar />
                 </div>
 
                 {submitStatus === 'success' ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-8"
-                  >
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-8">
                     <motion.div
                       animate={{ scale: [1, 1.1, 1] }}
                       transition={{ repeat: Infinity, duration: 2 }}
@@ -415,24 +470,21 @@ export default function ContactSection() {
                     >
                       🎉
                     </motion.div>
-                    <p className="text-gray-300 mb-4">
-                      A confirmation email has been sent to {formData.email}
+                    <p className="text-gray-300 mb-3">
+                      A confirmation email has been sent to {formData.email || 'your inbox'}.
                     </p>
-                    <p className="text-sm text-gray-500">
-                      I typically respond within 24-48 hours
-                    </p>
+                    <p className="text-sm text-gray-500">Expect a response within 24–48 hours.</p>
                   </motion.div>
                 ) : (
-                  <form onSubmit={handleFormSubmit} className="space-y-4">
+                  <form onSubmit={handleFormSubmit} className="space-y-4" noValidate>
                     <AnimatePresence mode="wait">
-                      {/* Step 1: Personal Info */}
                       {formStep === 1 && (
                         <motion.div
                           key="step1"
                           initial={{ opacity: 0, x: 20 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
-                          transition={{ duration: 0.3 }}
+                          transition={{ duration: 0.25 }}
                           className="space-y-4"
                         >
                           <div>
@@ -442,13 +494,21 @@ export default function ContactSection() {
                             <input
                               type="text"
                               value={formData.name}
-                              onChange={(e) =>
-                                setFormData({ ...formData, name: e.target.value })
-                              }
+                              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                              onBlur={() => validateStep(1)}
                               placeholder="John Doe"
-                              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+                              className={`w-full px-4 py-3 bg-white/5 border ${
+                                errors.name ? 'border-red-400/50' : 'border-white/10'
+                              } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all`}
                               required
+                              aria-invalid={!!errors.name}
+                              aria-describedby={errors.name ? 'err-name' : undefined}
                             />
+                            {errors.name && (
+                              <p id="err-name" role="alert" className="mt-1 text-xs text-red-400">
+                                {errors.name}
+                              </p>
+                            )}
                           </div>
 
                           <div>
@@ -458,40 +518,88 @@ export default function ContactSection() {
                             <input
                               type="email"
                               value={formData.email}
-                              onChange={(e) =>
-                                setFormData({ ...formData, email: e.target.value })
-                              }
+                              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                              onBlur={() => validateStep(1)}
                               placeholder="you@example.com"
-                              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+                              className={`w-full px-4 py-3 bg-white/5 border ${
+                                errors.email ? 'border-red-400/50' : 'border-white/10'
+                              } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all`}
                               required
+                              aria-invalid={!!errors.email}
+                              aria-describedby={errors.email ? 'err-email' : undefined}
                             />
+                            {errors.email && (
+                              <p id="err-email" role="alert" className="mt-1 text-xs text-red-400">
+                                {errors.email}
+                              </p>
+                            )}
                           </div>
 
                           <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
-                              Phone Number (Optional)
+                              Phone (optional)
                             </label>
                             <input
                               type="tel"
+                              inputMode="tel"
                               value={formData.phone}
-                              onChange={(e) =>
-                                setFormData({ ...formData, phone: e.target.value })
-                              }
-                              placeholder="+91 XXXXX XXXXX"
-                              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                // apply gentle masking only if starts with +(preferred)
+                                const next = v.startsWith('+') ? formatPhone(v) : v;
+                                setFormData({ ...formData, phone: next });
+                              }}
+                              onBlur={() => validateStep(1)}
+                              placeholder="+91 99954 75379"
+                              className={`w-full px-4 py-3 bg-white/5 border ${
+                                errors.phone ? 'border-red-400/50' : 'border-white/10'
+                              } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all`}
+                              aria-invalid={!!errors.phone}
+                              aria-describedby={errors.phone ? 'err-phone' : undefined}
                             />
+                            {errors.phone && (
+                              <p id="err-phone" role="alert" className="mt-1 text-xs text-red-400">
+                                {errors.phone}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-300 mb-2">
+                                Company (optional)
+                              </label>
+                              <input
+                                type="text"
+                                value={formData.company}
+                                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                                placeholder="Acme Inc."
+                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-300 mb-2">
+                                Your role (optional)
+                              </label>
+                              <input
+                                type="text"
+                                value={formData.role}
+                                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                placeholder="Hiring Manager"
+                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+                              />
+                            </div>
                           </div>
                         </motion.div>
                       )}
 
-                      {/* Step 2: Project Details */}
                       {formStep === 2 && (
                         <motion.div
                           key="step2"
                           initial={{ opacity: 0, x: 20 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
-                          transition={{ duration: 0.3 }}
+                          transition={{ duration: 0.25 }}
                           className="space-y-4"
                         >
                           <div>
@@ -500,76 +608,65 @@ export default function ContactSection() {
                             </label>
                             <select
                               value={formData.serviceType}
-                              onChange={(e) =>
-                                setFormData({
-                                  ...formData,
-                                  serviceType: e.target.value,
-                                })
-                              }
+                              onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
                               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
                             >
                               <option value="">Select a service...</option>
-                              {serviceTypes.map((type) => (
-                                <option key={type} value={type}>
-                                  {type}
+                              {serviceTypes.map((t) => (
+                                <option key={t} value={t}>
+                                  {t}
                                 </option>
                               ))}
                             </select>
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                              Budget Range
-                            </label>
-                            <select
-                              value={formData.budget}
-                              onChange={(e) =>
-                                setFormData({ ...formData, budget: e.target.value })
-                              }
-                              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
-                            >
-                              <option value="">Select budget range...</option>
-                              {budgetRanges.map((range) => (
-                                <option key={range} value={range}>
-                                  {range}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                              Timeline
-                            </label>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Timeline</label>
                             <select
                               value={formData.timeline}
-                              onChange={(e) =>
-                                setFormData({
-                                  ...formData,
-                                  timeline: e.target.value,
-                                })
-                              }
+                              onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
                               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
                             >
                               <option value="">Select timeline...</option>
-                              {timelines.map((time) => (
-                                <option key={time} value={time}>
-                                  {time}
+                              {timelines.map((t) => (
+                                <option key={t} value={t}>
+                                  {t}
                                 </option>
                               ))}
                             </select>
                           </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Engagement model
+                            </label>
+                            <select
+                              value={formData.engagement}
+                              onChange={(e) => setFormData({ ...formData, engagement: e.target.value })}
+                              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+                            >
+                              <option value="">Choose an option...</option>
+                              {engagementModels.map((g) => (
+                                <option key={g} value={g}>
+                                  {g}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <p className="text-xs text-gray-500">
+                            Not sure yet? You can leave these blank and we&apos;ll explore together on the call.
+                          </p>
                         </motion.div>
                       )}
 
-                      {/* Step 3: Message */}
                       {formStep === 3 && (
                         <motion.div
                           key="step3"
                           initial={{ opacity: 0, x: 20 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
-                          transition={{ duration: 0.3 }}
+                          transition={{ duration: 0.25 }}
                           className="space-y-4"
                         >
                           <div>
@@ -578,22 +675,116 @@ export default function ContactSection() {
                             </label>
                             <textarea
                               value={formData.message}
-                              onChange={(e) =>
-                                setFormData({
-                                  ...formData,
-                                  message: e.target.value,
-                                })
-                              }
-                              placeholder="Tell me about your project, goals, and requirements..."
-                              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all resize-none h-32"
+                              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                              onBlur={() => validateStep(3)}
+                              placeholder="Tell me about your project, goals, scope, target timeline, and any links..."
+                              className={`w-full px-4 py-3 bg-white/5 border ${
+                                errors.message ? 'border-red-400/50' : 'border-white/10'
+                              } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all resize-none h-32`}
                               required
+                              maxLength={2000}
+                              aria-invalid={!!errors.message}
+                              aria-describedby={errors.message ? 'err-message' : 'help-count'}
+                            />
+                            <div className="flex items-center justify-between">
+                              {errors.message ? (
+                                <p id="err-message" role="alert" className="mt-1 text-xs text-red-400">
+                                  {errors.message}
+                                </p>
+                              ) : (
+                                <span id="help-count" className="mt-1 text-[11px] text-gray-500">
+                                  {formData.message.length}/2000
+                                </span>
+                              )}
+                              <div className="text-[11px] text-gray-500">
+                                Tip: include problem, audience, tech stack if known.
+                              </div>
+                            </div>
+                          </div>
+
+                          <label className="flex items-start gap-3 text-sm text-gray-300">
+                            <input
+                              type="checkbox"
+                              checked={consent}
+                              onChange={(e) => {
+                                setConsent(e.target.checked);
+                                setErrors((prev) => ({ ...prev, consent: undefined }));
+                              }}
+                              className="mt-1 h-4 w-4 rounded border-white/20 bg-white/5"
+                            />
+                            <span>
+                              You agree to be contacted regarding this request. Aravind will be notified regarding your requirement.
+                            </span>
+                          </label>
+                          {errors.consent && <p className="text-xs text-red-400">{errors.consent}</p>}
+                        </motion.div>
+                      )}
+
+                      {formStep === 4 && (
+                        <motion.div
+                          key="step4"
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.25 }}
+                          className="space-y-4"
+                        >
+                          <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2">
+                            <ReviewRow
+                              label="Name"
+                              value={formData.name || '—'}
+                              onEdit={() => setFormStep(1)}
+                            />
+                            <ReviewRow
+                              label="Email"
+                              value={formData.email || '—'}
+                              onEdit={() => setFormStep(1)}
+                            />
+                            <ReviewRow
+                              label="Phone"
+                              value={formData.phone || '—'}
+                              onEdit={() => setFormStep(1)}
+                            />
+                            <ReviewRow
+                              label="Company"
+                              value={formData.company || '—'}
+                              onEdit={() => setFormStep(1)}
+                            />
+                            <ReviewRow
+                              label="Role"
+                              value={formData.role || '—'}
+                              onEdit={() => setFormStep(1)}
+                            />
+                            <ReviewRow
+                              label="Service Type"
+                              value={formData.serviceType || '—'}
+                              onEdit={() => setFormStep(2)}
+                            />
+                            <ReviewRow
+                              label="Timeline"
+                              value={formData.timeline || '—'}
+                              onEdit={() => setFormStep(2)}
+                            />
+                            <ReviewRow
+                              label="Engagement"
+                              value={formData.engagement || '—'}
+                              onEdit={() => setFormStep(2)}
+                            />
+                            <ReviewRow
+                              label="Message"
+                              value={formData.message || '—'}
+                              onEdit={() => setFormStep(3)}
+                              multiline
                             />
                           </div>
+                          <p className="text-xs text-gray-500">
+                            Looks good? Send it now and you’ll receive a confirmation email. Aravind will be notified immediately.
+                          </p>
                         </motion.div>
                       )}
                     </AnimatePresence>
 
-                    {/* Navigation Buttons */}
+                    {/* Navigation */}
                     <div className="flex gap-3 pt-4">
                       {formStep > 1 && (
                         <motion.button
@@ -606,8 +797,7 @@ export default function ContactSection() {
                           Previous
                         </motion.button>
                       )}
-
-                      {formStep < 3 ? (
+                      {formStep < 4 ? (
                         <motion.button
                           type="button"
                           onClick={handleNext}
@@ -629,10 +819,7 @@ export default function ContactSection() {
                             <motion.div className="flex items-center justify-center gap-2">
                               <motion.div
                                 animate={{ rotate: 360 }}
-                                transition={{
-                                  duration: 1,
-                                  repeat: Infinity,
-                                }}
+                                transition={{ duration: 1, repeat: Infinity }}
                                 className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
                               />
                               Sending...
@@ -645,12 +832,8 @@ export default function ContactSection() {
                     </div>
 
                     {submitStatus === 'error' && (
-                      <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-sm text-red-400 text-center mt-4"
-                      >
-                        Failed to send message. Please try again.
+                      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-400 text-center mt-4" role="alert">
+                        Failed to send message. Please try again in a moment.
                       </motion.p>
                     )}
                   </form>
@@ -661,5 +844,24 @@ export default function ContactSection() {
         )}
       </AnimatePresence>
     </section>
+  );
+}
+
+function ReviewRow({ label, value, onEdit, multiline = false }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <div className="text-xs uppercase tracking-wider text-gray-400">{label}</div>
+        <div className={`text-sm text-gray-200 ${multiline ? 'whitespace-pre-wrap' : ''}`}>{value}</div>
+      </div>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="text-xs px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white border border-white/10"
+        aria-label={`Edit ${label}`}
+      >
+        Edit
+      </button>
+    </div>
   );
 }
