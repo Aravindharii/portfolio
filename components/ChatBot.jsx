@@ -1,4 +1,4 @@
-// components/ChatBot.jsx
+// components/ChatBot.jsx (FULLY FIXED - No Early Returns, Auto-open Works)
 'use client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
@@ -11,31 +11,38 @@ export default function ChatBot() {
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false); // ✅ Added explicit desktop flag
   const [copiedId, setCopiedId] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Detect device type - responsive
+  // ✅ SINGLE device detection effect
   useEffect(() => {
     const checkDevice = () => {
       const width = window.innerWidth;
-      setIsMobile(width < 768);
-      setIsTablet(width >= 768 && width < 1024);
+      const mobile = width < 768;
+      const tablet = width >= 768 && width < 1024;
+      const desktop = width >= 1024;
+      
+      setIsMobile(mobile);
+      setIsTablet(tablet);
+      setIsDesktop(desktop);
     };
+    
     checkDevice();
     window.addEventListener('resize', checkDevice);
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
-  // Auto-open on desktop only after 3 seconds
+  // ✅ Auto-open ONLY on desktop with fixed dependency array
   useEffect(() => {
-    if (!isMobile) {
+    if (isDesktop && !isOpen) {
       const timer = setTimeout(() => {
         setIsOpen(true);
-      }, 3000);
+      }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [isMobile]);
+  }, [isDesktop, isOpen]); // ✅ Proper dependencies
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -45,18 +52,20 @@ export default function ChatBot() {
   // Show welcome message when opened
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         addMessage('bot', "Hello! 👋 I'm Aravind's AI assistant. Feel free to ask me about his experience, projects, skills, or research. What would you like to know?");
       }, 300);
+      return () => clearTimeout(timer);
     }
-  }, [isOpen, messages.length]);
+  }, [isOpen]);
 
   // Focus input when opened on mobile
   useEffect(() => {
     if (isOpen && isMobile && inputRef.current) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 600);
+      return () => clearTimeout(timer);
     }
   }, [isOpen, isMobile]);
 
@@ -172,100 +181,78 @@ export default function ChatBot() {
     setError(null);
   };
 
-  // Responsive dimensions
+  // Responsive dimensions - ✅ No early returns
   const getDimensions = () => {
     if (isMobile) {
       return { width: '100%', height: '100vh', rounded: 'rounded-t-3xl' };
-    } else if (isTablet) {
-      return { width: '90%', height: '85vh', rounded: 'rounded-2xl' };
-    } else {
-      return { width: '520px', height: '750px', rounded: 'rounded-2xl' };
     }
+    if (isTablet) {
+      return { width: '90%', height: '85vh', rounded: 'rounded-2xl' };
+    }
+    return { width: '520px', height: '750px', rounded: 'rounded-2xl' };
   };
 
   const dims = getDimensions();
 
+  // ✅ ALL RENDERING HAPPENS BELOW - No early returns above this
   return (
     <>
-      {/* Floating Button - Desktop & Tablet Only */}
-      {!isMobile && (
-        <AnimatePresence>
-          {!isOpen && (
-            <motion.button
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              onClick={() => setIsOpen(true)}
-              className="fixed bottom-6 right-6 z-40 group"
+      {/* Floating Button - All Devices */}
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            onClick={() => setIsOpen(true)}
+            className="fixed bottom-6 right-6 z-40 group"
+            aria-label="Open chat"
+          >
+            {/* Glowing background */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-lg opacity-60"
+              animate={{
+                scale: [1, 1.3, 1],
+                opacity: [0.5, 0.8, 0.5],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+              }}
+            />
+            
+            {/* Main button */}
+            <div className="relative w-16 h-16 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-full flex items-center justify-center shadow-2xl border border-purple-300/30 hover:shadow-purple-500/50 hover:shadow-2xl transition-all active:scale-95">
+              <span className="relative text-3xl">💬</span>
+            </div>
+
+            {/* Ask Me Badge - All Devices */}
+            <motion.div
+              className="absolute -top-2 -right-2 px-2.5 py-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-xs font-bold text-white shadow-lg border border-purple-400/50"
+              animate={{ 
+                y: [-2, -10, -2],
+                scale: [1, 1.15, 1]
+              }}
+              transition={{ duration: 1.2, repeat: Infinity }}
             >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full blur-3xl"
-                animate={{
-                  scale: [1, 1.4, 1],
-                  opacity: [0.5, 0.8, 0.5],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                }}
-              />
-              
-              <div className="relative w-16 h-16 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-full flex items-center justify-center shadow-2xl border border-blue-300/30 hover:shadow-blue-500/50 hover:shadow-2xl transition-all">
-                <span className="relative text-3xl">💬</span>
-              </div>
-
-              <motion.div
-                className="absolute -top-3 -right-3 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full text-xs font-bold text-white shadow-lg"
-                animate={{ 
-                  y: [-3, -8, -3],
-                  scale: [1, 1.15, 1]
-                }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              >
-                Ask Me
-              </motion.div>
-            </motion.button>
-          )}
-        </AnimatePresence>
-      )}
-
-      {/* Mobile Floating Button - Manual Click Only */}
-      {isMobile && !isOpen && (
-        <motion.button
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50"
-        >
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full blur-2xl"
-            animate={{
-              scale: [1, 1.15, 1],
-              opacity: [0.6, 0.9, 0.6],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-            }}
-          />
-          <div className="relative w-16 h-16 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-full flex items-center justify-center shadow-xl border border-blue-300/30 active:scale-95 transition-transform">
-            <span className="text-3xl">💬</span>
-          </div>
-        </motion.button>
-      )}
+              Ask Me
+            </motion.div>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Chat Panel */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop - Mobile & Tablet */}
             {(isMobile || isTablet) && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setIsOpen(false)}
-                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md"
+                className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
               />
             )}
 
@@ -275,7 +262,7 @@ export default function ChatBot() {
               animate={isMobile ? { y: 0, opacity: 1 } : { scale: 1, opacity: 1, y: 0 }}
               exit={isMobile ? { y: '100%', opacity: 0 } : { scale: 0.8, opacity: 0, y: 20 }}
               transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-              className={`fixed z-50 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col
+              className={`fixed z-50 bg-black border border-white/10 shadow-2xl overflow-hidden flex flex-col
                 ${isMobile 
                   ? 'bottom-0 left-0 right-0 h-screen rounded-t-3xl w-full' 
                   : isTablet
@@ -289,73 +276,78 @@ export default function ChatBot() {
                 maxHeight: isMobile ? 'calc(100vh - 40px)' : dims.height,
               }}
             >
-              {/* Header - Clean & Refined */}
-              <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-900 dark:to-blue-950 px-4 sm:px-6 py-4 sm:py-5 border-b border-blue-400/10 flex-shrink-0">
+              {/* Header - Synced Design */}
+              <div className="relative bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 backdrop-blur-sm px-4 sm:px-6 py-4 sm:py-5 border-b border-white/10 flex-shrink-0">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <motion.div
-                      animate={{ scale: [1, 1.1, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 dark:bg-blue-800/40 rounded-lg flex items-center justify-center text-lg font-bold text-white flex-shrink-0 border border-white/20"
+                      animate={{ scale: [1, 1.1, 1], rotate: [0, 5, 0] }}
+                      transition={{ duration: 2.5, repeat: Infinity }}
+                      className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-lg font-bold text-white flex-shrink-0 border border-purple-400/50 shadow-lg"
                     >
                       🤖
                     </motion.div>
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-white font-bold text-sm sm:text-base truncate">Aravind's AI Chatbot</h2>
-                      <p className="text-blue-100/80 dark:text-blue-300/80 text-xs flex items-center gap-1.5">
+                      <h2 className="text-white font-bold text-sm sm:text-base truncate">Aravind's AI Assistant</h2>
+                      <p className="text-purple-300/70 text-xs flex items-center gap-1.5">
                         <motion.span
                           className="w-1.5 h-1.5 bg-green-400 rounded-full flex-shrink-0"
                           animate={{ scale: [1, 1.3, 1] }}
                           transition={{ duration: 1.5, repeat: Infinity }}
                         />
-                        <span>Powered by gemini</span>
+                        <span>Powered by Gemini</span>
                       </p>
                     </div>
                   </div>
 
-                  {/* Refined Action Buttons */}
+                  {/* Action Buttons - User Friendly */}
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={clearChat}
-                      className="w-8 h-8 sm:w-9 sm:h-9 hover:bg-white/20 dark:hover:bg-blue-700/50 rounded-lg flex items-center justify-center transition-all text-white/80 hover:text-white"
-                      title="Clear chat history"
+                      className="w-8 h-8 sm:w-9 sm:h-9 hover:bg-white/10 rounded-lg flex items-center justify-center transition-all text-gray-300 hover:text-white"
+                      title="Clear conversation"
+                      aria-label="Clear chat"
                     >
-                      <span className="text-base sm:text-lg">🗑️</span>
+                      🗑️
                     </motion.button>
                     
                     <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.85 }}
                       onClick={() => setIsOpen(false)}
-                      className="w-8 h-8 sm:w-9 sm:h-9 hover:bg-white/20 dark:hover:bg-blue-700/50 rounded-lg flex items-center justify-center transition-all text-white/80 hover:text-white group relative"
+                      className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-pink-500/20 rounded-lg flex items-center justify-center transition-all text-gray-300 hover:text-white group relative"
                       title="Close chat"
+                      aria-label="Close chat"
                     >
-                      <span className="text-lg sm:text-xl font-light">✕</span>
-                      <div className="absolute -bottom-8 right-0 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                        Close
-                      </div>
+                      <motion.span
+                        className="text-xl font-light"
+                        animate={{ rotate: 0 }}
+                        whileHover={{ rotate: 90 }}
+                      >
+                        ✕
+                      </motion.span>
                     </motion.button>
                   </div>
                 </div>
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4 sm:py-5 space-y-3 sm:space-y-4 bg-white dark:bg-slate-950 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4 sm:py-5 space-y-3 sm:space-y-4 custom-scrollbar">
                 {messages.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center text-center py-6 sm:py-8 px-4">
                     <motion.div
-                      animate={{ scale: [1, 1.05, 1], y: [0, -5, 0] }}
-                      transition={{ duration: 2, repeat: Infinity }}
+                      animate={{ scale: [1, 1.1, 1], y: [0, -8, 0] }}
+                      transition={{ duration: 2.5, repeat: Infinity }}
                       className="text-5xl sm:text-6xl mb-4 sm:mb-6"
                     >
                       🤖
                     </motion.div>
-                    <h3 className="text-gray-900 dark:text-white font-bold text-base sm:text-lg mb-2">Welcome!</h3>
-                    <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-7 sm:mb-8 max-w-xs">I'm here to help you learn more about Aravind</p>
+                    <h3 className="text-white font-bold text-base sm:text-lg mb-1.5">Welcome!</h3>
+                    <p className="text-gray-400 text-xs sm:text-sm mb-7 sm:mb-8 max-w-xs">Ask me anything about Aravind's experience, projects, and skills</p>
                     
-                    {/* Quick Actions - Improved */}
+                    {/* Quick Actions */}
                     <div className={`grid gap-2.5 sm:gap-3 w-full max-w-md
                       ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}
                     `}>
@@ -365,20 +357,20 @@ export default function ChatBot() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.05 }}
-                          whileHover={{ scale: 1.05 }}
+                          whileHover={{ scale: 1.05, y: -2 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => handleQuickAction(action.query)}
-                          className="p-2.5 sm:p-3 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-800/80 dark:to-slate-900/80 border border-blue-200 dark:border-slate-700 rounded-lg sm:rounded-xl hover:border-blue-300 dark:hover:border-slate-600 hover:bg-blue-100 dark:hover:bg-slate-700/60 transition-all text-left"
+                          className="p-2.5 sm:p-3 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 hover:border-purple-500/50 rounded-lg sm:rounded-xl hover:bg-purple-500/20 transition-all text-left group"
                         >
-                          <div className="text-lg sm:text-xl mb-1.5">{action.icon}</div>
-                          <div className="text-xs font-medium text-gray-900 dark:text-white line-clamp-2">{action.text}</div>
+                          <div className="text-lg sm:text-xl mb-1.5 group-hover:scale-110 transition-transform">{action.icon}</div>
+                          <div className="text-xs font-medium text-gray-300 group-hover:text-white transition-colors line-clamp-2">{action.text}</div>
                         </motion.button>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {messages.map((message, index) => (
+                {messages.map((message) => (
                   <motion.div
                     key={message.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -388,33 +380,34 @@ export default function ChatBot() {
                   >
                     <div className={`flex gap-2.5 max-w-[90%] sm:max-w-[85%] ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
                       {message.sender === 'bot' && (
-                        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5 shadow-lg">
                           AI
                         </div>
                       )}
                       <div className="flex flex-col gap-1">
                         <div className={`rounded-2xl px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm leading-relaxed break-words ${
                           message.sender === 'user'
-                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-none shadow-md'
-                            : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-slate-700 rounded-bl-none'
+                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-br-none shadow-lg'
+                            : 'bg-white/5 backdrop-blur-sm border border-white/10 text-gray-200 rounded-bl-none'
                         }`}>
                           {message.text}
                         </div>
                         <div className="flex items-center gap-2 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <p className={`text-xs ${
                             message.sender === 'user' 
-                              ? 'text-gray-500 dark:text-gray-400' 
-                              : 'text-gray-500 dark:text-gray-500'
+                              ? 'text-gray-400' 
+                              : 'text-gray-500'
                           }`}>
                             {message.timestamp}
                           </p>
                           {message.sender === 'bot' && (
                             <motion.button
-                              whileHover={{ scale: 1.15 }}
+                              whileHover={{ scale: 1.2 }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => copyToClipboard(message.text, message.id)}
-                              className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors text-sm"
+                              className="text-gray-500 hover:text-purple-400 transition-colors text-xs"
                               title="Copy message"
+                              aria-label="Copy message"
                             >
                               {copiedId === message.id ? '✓' : '📋'}
                             </motion.button>
@@ -431,16 +424,16 @@ export default function ChatBot() {
                     animate={{ opacity: 1 }}
                     className="flex gap-2.5"
                   >
-                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5 shadow-lg">
                       AI
                     </div>
-                    <div className="bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl rounded-bl-none px-4 py-3">
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl rounded-bl-none px-4 py-3">
                       <div className="flex gap-1.5">
                         {[0, 1, 2].map((i) => (
                           <motion.div
                             key={i}
-                            className="w-2 h-2 bg-blue-500 rounded-full"
-                            animate={{ y: [0, -8, 0], scale: [1, 1.1, 1] }}
+                            className="w-2 h-2 bg-purple-400 rounded-full"
+                            animate={{ y: [0, -8, 0], scale: [1, 1.15, 1] }}
                             transition={{
                               duration: 0.6,
                               repeat: Infinity,
@@ -456,31 +449,33 @@ export default function ChatBot() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input Area - Clean & Simple */}
-              <div className="border-t border-gray-200 dark:border-slate-800 p-3.5 sm:p-5 bg-white dark:bg-slate-950 flex-shrink-0">
+              {/* Input Area */}
+              <div className="border-t border-white/10 p-3.5 sm:p-5 bg-black/50 backdrop-blur-sm flex-shrink-0">
                 <div className="flex items-end gap-2 sm:gap-3">
                   <input
                     ref={inputRef}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Ask something..."
-                    className="flex-1 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg sm:rounded-xl px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all caret-blue-600 dark:caret-blue-400 resize-none"
+                    placeholder="Ask me anything..."
+                    className="flex-1 bg-white/5 border border-white/10 focus:border-purple-500/50 rounded-lg sm:rounded-xl px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30 transition-all caret-purple-500 resize-none"
                     disabled={isTyping}
                     rows="1"
+                    aria-label="Message input"
                   />
                   <motion.button
                     whileHover={{ scale: 1.08 }}
                     whileTap={{ scale: 0.92 }}
                     onClick={handleSend}
                     disabled={!inputValue.trim() || isTyping}
-                    className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 dark:disabled:from-slate-700 dark:disabled:to-slate-700 rounded-lg flex items-center justify-center transition-all text-white font-semibold disabled:opacity-50 flex-shrink-0 shadow-md hover:shadow-lg"
+                    className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-gray-600 disabled:to-gray-600 rounded-lg flex items-center justify-center transition-all text-white font-semibold disabled:opacity-50 flex-shrink-0 shadow-lg hover:shadow-purple-500/50"
+                    aria-label="Send message"
                   >
-                    <span className="text-lg">↑</span>
+                    <span className="text-lg">→</span>
                   </motion.button>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2 opacity-70">
-                  Powered by Gemini ✨
+                <p className="text-xs text-gray-500 text-center mt-2 opacity-60">
+                  Press Enter to send
                 </p>
               </div>
             </motion.div>
@@ -488,7 +483,7 @@ export default function ChatBot() {
         )}
       </AnimatePresence>
 
-      {/* Custom Scrollbar & Global Styles */}
+      {/* Custom Scrollbar */}
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
@@ -497,26 +492,17 @@ export default function ChatBot() {
           background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
+          background: rgba(168, 85, 247, 0.4);
           border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
-        
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #475569;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #64748b;
+          background: rgba(168, 85, 247, 0.6);
         }
 
-        /* Smooth scrolling */
         .custom-scrollbar {
           scroll-behavior: smooth;
         }
 
-        /* Line clamping */
         .line-clamp-2 {
           display: -webkit-box;
           -webkit-line-clamp: 2;
