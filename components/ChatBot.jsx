@@ -15,7 +15,6 @@ export default function ChatBot() {
   const [copiedId, setCopiedId] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-  const hasAutoOpenedRef = useRef(false);
 
   // ✅ SINGLE device detection effect
   useEffect(() => {
@@ -24,30 +23,26 @@ export default function ChatBot() {
       const mobile = width < 768;
       const tablet = width >= 768 && width < 1024;
       const desktop = width >= 1024;
-
+      
       setIsMobile(mobile);
       setIsTablet(tablet);
       setIsDesktop(desktop);
     };
-
+    
     checkDevice();
     window.addEventListener('resize', checkDevice);
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
   // ✅ Auto-open ONLY on desktop with fixed dependency array
-
-
-  // ✅ Auto-open ONLY on desktop with fixed dependency array
   useEffect(() => {
-    if (isDesktop && !isOpen && !hasAutoOpenedRef.current) {
+    if (isDesktop && !isOpen) {
       const timer = setTimeout(() => {
         setIsOpen(true);
-        hasAutoOpenedRef.current = true; // Mark as opened
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [isDesktop]); // ✅ Remove isOpen from dependencies
+  }, [isDesktop, isOpen]); // ✅ Proper dependencies
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -74,7 +69,6 @@ export default function ChatBot() {
     }
   }, [isOpen, isMobile]);
 
-
   const addMessage = (sender, text) => {
     setMessages(prev => [...prev, {
       id: Date.now() + Math.random(),
@@ -86,17 +80,17 @@ export default function ChatBot() {
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
-
+    
     const userMessage = inputValue;
     addMessage('user', userMessage);
     setInputValue('');
     setError(null);
     setIsTyping(true);
-
+    
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
-
+      
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,7 +104,7 @@ export default function ChatBot() {
       clearTimeout(timeoutId);
       const data = await response.json();
       setIsTyping(false);
-
+      
       if (data.success) {
         addMessage('bot', data.message);
       } else {
@@ -120,8 +114,8 @@ export default function ChatBot() {
     } catch (error) {
       console.error('Chat error:', error);
       setIsTyping(false);
-      const errorMsg = error.name === 'AbortError'
-        ? "Request timed out. Please try again."
+      const errorMsg = error.name === 'AbortError' 
+        ? "Request timed out. Please try again." 
         : "Connection error. Please check your internet and try again.";
       addMessage('bot', errorMsg);
       setError('Network Error');
@@ -155,7 +149,7 @@ export default function ChatBot() {
     setInputValue('');
     setError(null);
     setIsTyping(true);
-
+    
     setTimeout(async () => {
       try {
         const response = await fetch('/api/chat', {
@@ -169,7 +163,7 @@ export default function ChatBot() {
 
         const data = await response.json();
         setIsTyping(false);
-
+        
         if (data.success) {
           addMessage('bot', data.message);
         } else {
@@ -226,7 +220,7 @@ export default function ChatBot() {
                 repeat: Infinity,
               }}
             />
-
+            
             {/* Main button */}
             <div className="relative w-16 h-16 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-full flex items-center justify-center shadow-2xl border border-purple-300/30 hover:shadow-purple-500/50 hover:shadow-2xl transition-all active:scale-95">
               <span className="relative text-3xl">💬</span>
@@ -235,7 +229,7 @@ export default function ChatBot() {
             {/* Ask Me Badge - All Devices */}
             <motion.div
               className="absolute -top-2 -right-2 px-2.5 py-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-xs font-bold text-white shadow-lg border border-purple-400/50"
-              animate={{
+              animate={{ 
                 y: [-2, -10, -2],
                 scale: [1, 1.15, 1]
               }}
@@ -269,11 +263,11 @@ export default function ChatBot() {
               exit={isMobile ? { y: '100%', opacity: 0 } : { scale: 0.8, opacity: 0, y: 20 }}
               transition={{ type: 'spring', damping: 28, stiffness: 350 }}
               className={`fixed z-50 bg-black border border-white/10 shadow-2xl overflow-hidden flex flex-col
-                ${isMobile
-                  ? 'bottom-0 left-0 right-0 h-screen rounded-t-3xl w-full'
+                ${isMobile 
+                  ? 'bottom-0 left-0 right-0 h-screen rounded-t-3xl w-full' 
                   : isTablet
-                    ? 'bottom-1/2 right-1/2 transform translate-x-1/2 translate-y-1/2 rounded-2xl'
-                    : 'bottom-6 right-6 rounded-2xl'
+                  ? 'bottom-1/2 right-1/2 transform translate-x-1/2 translate-y-1/2 rounded-2xl'
+                  : 'bottom-6 right-6 rounded-2xl'
                 }
                 ${dims.rounded}`}
               style={{
@@ -318,7 +312,7 @@ export default function ChatBot() {
                     >
                       🗑️
                     </motion.button>
-
+                    
                     <motion.button
                       whileHover={{ scale: 1.15 }}
                       whileTap={{ scale: 0.85 }}
@@ -352,7 +346,7 @@ export default function ChatBot() {
                     </motion.div>
                     <h3 className="text-white font-bold text-base sm:text-lg mb-1.5">Welcome!</h3>
                     <p className="text-gray-400 text-xs sm:text-sm mb-7 sm:mb-8 max-w-xs">Ask me anything about Aravind's experience, projects, and skills</p>
-
+                    
                     {/* Quick Actions */}
                     <div className={`grid gap-2.5 sm:gap-3 w-full max-w-md
                       ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}
@@ -391,17 +385,19 @@ export default function ChatBot() {
                         </div>
                       )}
                       <div className="flex flex-col gap-1">
-                        <div className={`rounded-2xl px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm leading-relaxed break-words ${message.sender === 'user'
-                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-br-none shadow-lg'
-                          : 'bg-white/5 backdrop-blur-sm border border-white/10 text-gray-200 rounded-bl-none'
-                          }`}>
+                        <div className={`rounded-2xl px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm leading-relaxed break-words ${
+                          message.sender === 'user'
+                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-br-none shadow-lg'
+                            : 'bg-white/5 backdrop-blur-sm border border-white/10 text-gray-200 rounded-bl-none'
+                        }`}>
                           {message.text}
                         </div>
                         <div className="flex items-center gap-2 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <p className={`text-xs ${message.sender === 'user'
-                            ? 'text-gray-400'
-                            : 'text-gray-500'
-                            }`}>
+                          <p className={`text-xs ${
+                            message.sender === 'user' 
+                              ? 'text-gray-400' 
+                              : 'text-gray-500'
+                          }`}>
                             {message.timestamp}
                           </p>
                           {message.sender === 'bot' && (

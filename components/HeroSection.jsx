@@ -90,9 +90,9 @@ export default function HeroSection() {
   }, []);
 
   const stats = [
-    { value: '2+', label: 'Years Experience', icon: '💼' },
-    { value: '10+', label: 'Projects Completed', icon: '🚀' },
-    { value: '3', label: 'Research Papers', icon: '📄' },
+    { value: '1', label: 'Year Experience', icon: '💼' },
+    { value: '5+', label: 'Live Projects Completed', icon: '🚀' },
+    { value: '2', label: 'Research Papers', icon: '📄' },
     { value: '100%', label: 'Client Satisfaction', icon: '⭐' },
   ];
 

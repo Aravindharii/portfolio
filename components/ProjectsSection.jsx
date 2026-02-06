@@ -17,8 +17,7 @@ export default function ProjectsSection() {
       gradient: 'from-purple-500 via-pink-500 to-red-500',
       icon: '🎓',
       status: 'In Development',
-            link: 'https://eduvocate.in',
-
+      link: 'https://eduvocate.in',
     },
     {
       title: 'Expertzlab Training Website',
@@ -29,20 +28,34 @@ export default function ProjectsSection() {
       link: 'https://expertzlab.com',
     },
     {
+      title: 'Buildnet Construction Assistant',
+      desc: 'All-in-one construction management platform streamlining project workflows, resource planning, and team collaboration for construction businesses.',
+      tech: ['Next.js', 'Firebase', 'Tailwind CSS', 'Cloud Platform'],
+      gradient: 'from-slate-500 via-stone-500 to-zinc-500',
+      icon: '🏗️',
+      link: 'https://buildnet.app',
+    },
+    {
+      title: 'Taplet ',
+ desc: 'Comprehensive freelancing marketplace connecting clients with skilled professionals, featuring project management, secure payments, and real-time collaboration tools.',      tech: ['Node.js', 'Express', 'Together AI', 'Hugging Face', 'Bootstrap'],
+      gradient: 'from-green-500 via-emerald-500 to-cyan-500',
+      icon: '🤖',
+      link: 'https://taplet.in',
+    },
+    {
       title: 'AI Chatbot - Nova',
       desc: 'Hybrid AI chatbot combining rule-based logic with LLMs via Together AI. Integrated MathJS for real-time processing and Hugging Face model.',
       tech: ['Node.js', 'Express', 'Together AI', 'Hugging Face', 'Bootstrap'],
       gradient: 'from-green-500 via-emerald-500 to-cyan-500',
       icon: '🤖',
     },
-    {
-      title: 'EcoShopper E-Commerce',
-      desc: 'Eco-friendly e-commerce platform using JavaScript, localStorage, and DOM manipulation with responsive design using HTML5, CSS3, and Bootstrap 5.',
-      tech: ['JavaScript', 'HTML5', 'CSS3', 'Bootstrap 5', 'LocalStorage'],
-      gradient: 'from-orange-500 via-amber-500 to-yellow-500',
-      icon: '🛍️',
-    },
- 
+    // {
+    //   title: 'EcoShopper E-Commerce',
+    //   desc: 'Eco-friendly e-commerce platform using JavaScript, localStorage, and DOM manipulation with responsive design using HTML5, CSS3, and Bootstrap 5.',
+    //   tech: ['JavaScript', 'HTML5', 'CSS3', 'Bootstrap 5', 'LocalStorage'],
+    //   gradient: 'from-orange-500 via-amber-500 to-yellow-500',
+    //   icon: '🛍️',
+    // },
     {
       title: 'HR Training Effectiveness Study',
       desc: 'Research project at Hedge Equities analyzing employee training effectiveness through comprehensive survey of 60 employees.',

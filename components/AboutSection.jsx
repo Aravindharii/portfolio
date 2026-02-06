@@ -145,7 +145,7 @@ export default function AboutSection() {
                 <div>
                   <h3 className="text-lg md:text-2xl font-bold">Full Stack Developer</h3>
                   <p className="text-purple-400 text-sm md:text-base font-medium">GoFreeLab Technologies</p>
-                  <p className="text-xs md:text-sm text-gray-500">Aug 2024 - Present</p>
+                  <p className="text-xs md:text-sm text-gray-500">Nov 2024 - Present</p>
                 </div>
               </div>
               <ul className="relative z-10 space-y-2 text-gray-300 text-xs md:text-sm">
