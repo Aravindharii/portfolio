@@ -37,9 +37,10 @@ export default function ProjectsSection() {
     },
     {
       title: 'Taplet ',
- desc: 'Comprehensive freelancing marketplace connecting clients with skilled professionals, featuring project management, secure payments, and real-time collaboration tools.',      tech: ['Node.js', 'Express', 'Together AI', 'Hugging Face', 'Bootstrap'],
+ desc: 'Comprehensive freelancing marketplace connecting clients with skilled professionals, featuring project management, secure payments, and real-time collaboration tools.',   
+    tech: ['Node.js', 'Express', 'Next.js', 'Firebase', 'Tailwind CSS'],
       gradient: 'from-green-500 via-emerald-500 to-cyan-500',
-      icon: '🤖',
+      icon: '💻',
       link: 'https://taplet.in',
     },
     {
