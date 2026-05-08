@@ -12,7 +12,7 @@ export default function ChatBot() {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false); // ✅ Added explicit desktop flag
-  const [hasAutoOpened, setHasAutoOpened] = useState(false);
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);//this declaration has been directly being committed from github code editor so if any issue regarding hooks remove this particular line rest of reference is in the bottom
   const [copiedId, setCopiedId] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -41,11 +41,11 @@ useEffect(() => {
     const timer = setTimeout(() => {
       setIsOpen(true);
       setHasAutoOpened(true);
-    }, 2000);
+    }, 2000); 
 
     return () => clearTimeout(timer);
   }
-}, [isDesktop, isOpen, hasAutoOpened]);
+}, [isDesktop, isOpen, hasAutoOpened]); //part of previous useeffect hooks
 
   // Auto-scroll to bottom
   useEffect(() => {
