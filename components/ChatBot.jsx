@@ -12,6 +12,7 @@ export default function ChatBot() {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false); // ✅ Added explicit desktop flag
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -35,14 +36,16 @@ export default function ChatBot() {
   }, []);
 
   // ✅ Auto-open ONLY on desktop with fixed dependency array
-  useEffect(() => {
-    if (isDesktop && !isOpen) {
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isDesktop, isOpen]); // ✅ Proper dependencies
+useEffect(() => {
+  if (isDesktop && !isOpen && !hasAutoOpened) {
+    const timer = setTimeout(() => {
+      setIsOpen(true);
+      setHasAutoOpened(true);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }
+}, [isDesktop, isOpen, hasAutoOpened]);
 
   // Auto-scroll to bottom
   useEffect(() => {
